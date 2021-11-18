@@ -1,5 +1,6 @@
 import networkx as nx
 import matplotlib.pyplot as plt
+from PIL import Image
 
 G = nx.Graph()
 G.add_edges_from([(1,2),(2,3),(1,4),(3,5),(4,5),(1,5)])
@@ -11,3 +12,6 @@ paths = nx.all_simple_paths(G,3,4)
 for path in paths:
     print(path)
 plt.show()  
+
+im = Image.open("Figure_1.png")
+im.show()

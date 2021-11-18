@@ -12,16 +12,15 @@ COLUMN_COUNT = 8
 SCREEN_WIDTH = 550
 SCREEN_HEIGHT = 400
 
-
-class MyGame(arcade.Window):
+class GameView(arcade.View):
     """
     Main application class.
     """
 
-    def __init__(self, width, height):
-        super().__init__(width, height)
+    def __init__(self,score = 0):
+        super().__init__()
         arcade.set_background_color(arcade.color.BALL_BLUE)
-        self.score = 0
+        self.score = score
         self.new_round()
         
 
@@ -56,6 +55,7 @@ class MyGame(arcade.Window):
         self.text_box(1,13,3,arcade.color.PINK,"Refresh")
         self.text_box(17,13,4,arcade.color.PINK,"New Round")
         self.text_box(10,13,2,arcade.color.PINK,"Go!")
+        self.text_box(17,15,4,arcade.color.PINK,"Scematic")
         self.text_box(10,15,3,arcade.color.PINK,"Score: {}".format(self.score))
         for i, edge in enumerate(self.grid):
             self.text_box(12,i+3,2,arcade.color.PINK,"{}-{}".format(edge[0],edge[1]))
@@ -100,11 +100,16 @@ class MyGame(arcade.Window):
         elif column in [10,11] and row == 13:
             if self.is_solution(self.ans_grid,self.first_slot):
                 self.score += 1
-                self.new_round()
+                #self.new_round()
                 print("Well Done!!!")
+                win_view = winView(self)
+                self.window.show_view(win_view)
             else:
                 print("Try again")
                 #self.refresh()
+        elif column in [17,18,19,20] and row == 15:
+            scematic_view = scematicView(self)
+            self.window.show_view(scematic_view)
 
         else:
             print("Out of bounds")
@@ -160,7 +165,8 @@ class MyGame(arcade.Window):
                 if has_solution:
                     break
             
-        
+    def set_score(self,score):
+        self.score = score
 
 
     def is_solution(self,ans_grid,first_slot):
@@ -179,11 +185,47 @@ class MyGame(arcade.Window):
             #print("No path exists")
             return False
 
+class scematicView(arcade.View):
+
+    def __init__(self, game_view):
+        super().__init__()
+        self.game_view = game_view
+
+    def on_show(self):
+        self.background = arcade.load_texture("Figure_1.png")
+
+    def on_draw(self):
+        arcade.start_render()
+        # Draw the background texture
+        arcade.draw_lrwh_rectangle_textured(0, 0,SCREEN_WIDTH, SCREEN_HEIGHT,self.background)
+
+    def on_mouse_press(self, x: float, y: float, button: int, modifiers: int):
+        self.window.show_view(self.game_view)
+
+class winView(arcade.View):
+
+    def __init__(self, game_view):
+        super().__init__()
+        self.game_view = game_view
+
+    def on_show(self):
+        self.background = arcade.load_texture("youwin.jpg")
+    
+    def on_draw(self):
+        arcade.start_render()
+        # Draw the background texture
+        arcade.draw_lrwh_rectangle_textured(0, 0,SCREEN_WIDTH, SCREEN_HEIGHT,self.background)
+
+    def on_mouse_press(self, x: float, y: float, button: int, modifiers: int):
+        self.game_view.new_round()
+        self.window.show_view(self.game_view)
 
 def main():
 
-    window = MyGame(SCREEN_WIDTH, SCREEN_HEIGHT)
-
+    window = arcade.Window(SCREEN_WIDTH, SCREEN_HEIGHT)
+    start_view=GameView()
+    window.show_view(start_view)    
+    #start_view.setup()
     arcade.run()
 
 
