@@ -1,7 +1,13 @@
-class Test:
-    
-    def __init__(self):
-        self.name = "Moshe"
+import networkx as nx
+import matplotlib.pyplot as plt
 
-ob = Test()
-print(ob.name)
+G = nx.Graph()
+G.add_edges_from([(1,2),(2,3),(1,4),(3,5),(4,5),(1,5)])
+nx.draw_networkx(G)
+print(nx.has_path(G,1,5))
+#def path(s,d):
+ #   n = nx.neighbors()
+paths = nx.all_simple_paths(G,3,4)
+for path in paths:
+    print(path)
+plt.show()  
