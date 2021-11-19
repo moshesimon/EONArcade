@@ -56,7 +56,7 @@ class GameView(arcade.View):
         self.text_box(17,13,4,arcade.color.PINK,"New Round")
         self.text_box(10,13,2,arcade.color.PINK,"Go!")
         self.text_box(17,15,4,arcade.color.PINK,"Scematic")
-        self.text_box(10,15,3,arcade.color.PINK,"Score: {}".format(self.score))
+        self.text_box(10,15,4,arcade.color.PINK,"Score: {}".format(self.score))
         for i, edge in enumerate(self.grid):
             self.text_box(12,i+3,2,arcade.color.PINK,"{}-{}".format(edge[0],edge[1]))
         if self.ans_grid:
@@ -122,7 +122,7 @@ class GameView(arcade.View):
     
     def new_round(self):
         has_solution = False
-        self.edges = [(1,2),(2,3),(1,4),(3,5),(2,5),(4,5),(1,5),]
+        self.edges = [(1,2),(2,3),(1,4),(3,5),(2,5),(4,5),(1,5)]
         self.G = nx.Graph()
         self.G.add_edges_from(self.edges)
         #nx.draw_networkx(self.G)
@@ -138,7 +138,7 @@ class GameView(arcade.View):
                 self.grid[edge] = np.random.randint(2,size = COLUMN_COUNT)
             self.ans_grid = {}
             self.specgrid = np.zeros(COLUMN_COUNT, dtype= int)
-            self.slots = np.random.randint(1,5)
+            self.slots = np.random.randint(2,5)
             for i in range(self.slots):
                 self.specgrid[i] = 1
             all_paths = nx.all_simple_paths(self.G,self.source,self.target)
