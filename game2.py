@@ -267,7 +267,7 @@ class topologyView(arcade.View):
         self.game_view = game_view
 
     def on_show(self):
-        self.background = arcade.load_texture("Figure_3.png")
+        self.background = arcade.load_texture("pics\Figure_3.png")
 
     def on_draw(self):
         arcade.start_render()
@@ -286,7 +286,7 @@ class winView(arcade.View):
         self.game_view = game_view
 
     def on_show(self):
-        self.background = arcade.load_texture("well done.jpg")
+        self.background = arcade.load_texture("pics\well done.jpg")
     
     def on_draw(self):
         arcade.start_render()
@@ -306,7 +306,7 @@ class looseView(arcade.View):
         self.game_view = game_view
 
     def on_show(self):
-        self.background = arcade.load_texture("gameover.jpg")
+        self.background = arcade.load_texture("pics\gameover.jpg")
     
     def on_draw(self):
         arcade.start_render()
