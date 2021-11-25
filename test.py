@@ -12,6 +12,3 @@ paths = nx.all_simple_paths(G,3,4)
 for path in paths:
     print(path)
 plt.show()  
-
-im = Image.open("Figure_1.png")
-im.show()
