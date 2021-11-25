@@ -24,7 +24,6 @@ class GameView(arcade.View):
         self.high_score = 0
         self.new_game()
         
-
     def on_draw(self):
         """
         Render the screen.
@@ -68,8 +67,6 @@ class GameView(arcade.View):
 
         for i,edge in enumerate(self.ans_grid): #print links next to answer grid
             self.text_box(9,i+3,2,arcade.color.PINK,"{}-{}".format(edge[0],edge[1]))
-
-    
 
     def text_box(self,col,row,width,colour,text=None):
         """
@@ -138,22 +135,9 @@ class GameView(arcade.View):
             else:
                 print("That link has already been selected")
 
-    def check_solution(self):
-        """
-        Checks for solution
-        """
-        if self.is_solution(self.ans_grid,self.first_slot): #check if solution is correct
-                self.score += 10
-                self.update_link_grid()
-                win_view = winView(self) 
-                self.window.show_view(win_view) #show win screen
-        else:
-            print("Try again")
-
     def update_link_grid(self):
         for edge in self.ans_grid.keys():
             self.link_grid[edge] = np.add(self.link_grid[edge],self.spec_grid)
-
 
     def update_spec_grid(self):
         self.spec_grid = np.zeros(COLUMN_COUNT, dtype= int)
@@ -195,40 +179,17 @@ class GameView(arcade.View):
         self.slots = np.random.randint(2,5)
         self.update_spec_grid()#populate spectrum grid
 
-        
-    def has_solution(self):
+    def check_solution(self):
         """
-        Checks if round parameters contain a solution
+        Checks for solution
         """
-        #find all possible paths between source and target
-        all_paths = nx.all_simple_paths(self.G,self.source,self.target) 
-        for path in all_paths: #for each possible path
-            i = 0 
-            all_edges = []
-            while i < len(path)-1: #prepare all edges in path
-                if path[i] < path[i+1]:
-                    all_edges.append((path[i],path[i+1]))
-                else:
-                    all_edges.append((path[i+1],path[i]))
-                i+=1
-
-            temp_ans_grid = {}
-            for edge in all_edges: #populate answer grid with edges 
-                temp_ans_grid[edge]= self.link_grid[edge]
-
-            #for each possible position of the spectrum slots
-            for i in range(COLUMN_COUNT-self.slots+1): 
-                if self.is_solution(temp_ans_grid,i): #check if solution is correct
-                    return True
-
-    def swapList(self,sl,pos1,pos2):
-        """
-        Swaps position of two elements in a list
-        """
-        temp = sl[pos1]
-        sl[pos1] = sl[pos2]
-        sl[pos2] = temp
-        return sl
+        if self.is_solution(self.ans_grid,self.first_slot): #check if solution is correct
+                self.score += 10
+                self.update_link_grid()
+                win_view = winView(self) 
+                self.window.show_view(win_view) #show win screen
+        else:
+            print("Try again")
 
     def is_solution(self,ans_grid,first_slot):
         """
@@ -257,6 +218,15 @@ class GameView(arcade.View):
                 if row[first_slot + i] != 0: #if slot in spectrum is occupied 
                     return False
         return True
+
+    def swapList(self,sl,pos1,pos2):
+        """
+        Swaps position of two elements in a list
+        """
+        temp = sl[pos1]
+        sl[pos1] = sl[pos2]
+        sl[pos2] = temp
+        return sl
 
 class topologyView(arcade.View):
     """

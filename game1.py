@@ -129,17 +129,6 @@ class GameView(arcade.View):
             else:
                 print("That link has already been selected")
 
-    def check_solution(self):
-        """
-        Checks for solution
-        """
-        if self.is_solution(self.ans_grid,self.first_slot): #check if solution is correct
-                self.score += 10
-                win_view = winView(self) 
-                self.window.show_view(win_view) #show win screen
-        else:
-            print("Try again")
-
     def refresh(self):
         """
         Refreshes the answer grid
@@ -157,8 +146,7 @@ class GameView(arcade.View):
         while not has_solution:
             self.roundSetup()
             has_solution = self.has_solution()
-                        
-                        
+                                  
     def roundSetup(self):
         """
         Sets up all parameters for a new round
@@ -176,8 +164,6 @@ class GameView(arcade.View):
 
         for edge in self.edges: #populate link grid
             self.link_grid[edge] = np.random.randint(2,size = COLUMN_COUNT) 
-
-        
 
     def has_solution(self):
         """
@@ -204,14 +190,16 @@ class GameView(arcade.View):
                 if self.is_solution(temp_ans_grid,i): #check if solution is correct
                     return True
 
-    def swapList(self,sl,pos1,pos2):
+    def check_solution(self):
         """
-        Swaps position of two elements in a list
+        Checks for solution
         """
-        temp = sl[pos1]
-        sl[pos1] = sl[pos2]
-        sl[pos2] = temp
-        return sl
+        if self.is_solution(self.ans_grid,self.first_slot): #check if solution is correct
+                self.score += 10
+                win_view = winView(self) 
+                self.window.show_view(win_view) #show win screen
+        else:
+            print("Try again")
 
     def is_solution(self,ans_grid,first_slot):
         """
@@ -240,6 +228,15 @@ class GameView(arcade.View):
                 if row[first_slot + i] != 0: #if slot in spectrum is occupied 
                     return False
         return True
+
+    def swapList(self,sl,pos1,pos2):
+        """
+        Swaps position of two elements in a list
+        """
+        temp = sl[pos1]
+        sl[pos1] = sl[pos2]
+        sl[pos2] = temp
+        return sl
 
 class topologyView(arcade.View):
     """
