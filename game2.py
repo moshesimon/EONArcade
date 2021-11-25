@@ -1,27 +1,28 @@
+from typing import OrderedDict
 import arcade
-from arcade.color import FALU_RED
 import numpy as np
 import networkx as nx
-import matplotlib.pyplot as plt
+import time
 
 WIDTH = 20
 HEIGHT = 20
 MARGIN = 5
-ROW_COUNT = 7
+ROW_COUNT = 8
 COLUMN_COUNT = 8
 SCREEN_WIDTH = 550
 SCREEN_HEIGHT = 400
+TIME = 30
 
 class GameView(arcade.View):
     """
     Main application class.
     """
 
-    def __init__(self,score = 0):
+    def __init__(self):
         super().__init__()
         arcade.set_background_color(arcade.color.BALL_BLUE)
-        self.score = score
-        self.new_round()
+        self.high_score = 0
+        self.new_game()
         
 
     def on_draw(self):
@@ -29,163 +30,237 @@ class GameView(arcade.View):
         Render the screen.
         """
         arcade.start_render()
-        
-        for i,row in enumerate(self.grid.values()): # print links grid
+        self.t = time.time() - self.org_time
+        self.count_down() 
+
+        for i,row in enumerate(self.link_grid.values()): #print links grid
             for column in range(COLUMN_COUNT):
                 if row[column] == 0:
                     self.text_box(column+14,i+3,1,arcade.color.WHITE)
                 else:
                     self.text_box(column+14,i+3,1,arcade.color.BLACK)
-        if self.ans_grid:
-            for i,row in enumerate(self.ans_grid.values()):
-                for column in range(COLUMN_COUNT):
-                    if row[column] == 0:
-                        self.text_box(column+1,i+3,1,arcade.color.WHITE)
-                    else:
-                        self.text_box(column+1,i+3,1,arcade.color.BLACK)
 
-        for column in range(COLUMN_COUNT):# print slots
-            if self.specgrid[column] == 0:
-                self.text_box(column+self.first_slot+1,2,1,arcade.color.BALL_BLUE)
+        for i,row in enumerate(self.ans_grid.values()): #print answer grid
+            for column in range(COLUMN_COUNT):
+                if row[column] == 0:
+                    self.text_box(column+1,i+3,1,arcade.color.WHITE)
+                else:
+                    self.text_box(column+1,i+3,1,arcade.color.BLACK)
+
+        for column in range(COLUMN_COUNT): #print slots
+            if self.spec_grid[column] == 0:
+                self.text_box(column+1,2,1,arcade.color.BALL_BLUE)
             else:
-                self.text_box(column+self.first_slot+1,2,1,arcade.color.GREEN)
+                self.text_box(column+1,2,1,arcade.color.GREEN)
 
-        self.text_box(4.5,1,1,arcade.color.PINK,str(self.source))
-        self.text_box(4.5,10,1,arcade.color.PINK,str(self.target))
-        self.text_box(1,13,3,arcade.color.PINK,"Refresh")
-        self.text_box(17,13,4,arcade.color.PINK,"New Round")
-        self.text_box(10,13,2,arcade.color.PINK,"Go!")
-        self.text_box(17,15,4,arcade.color.PINK,"Topology")
-        self.text_box(10,15,4,arcade.color.PINK,"Score: {}".format(self.score))
-        for i, edge in enumerate(self.grid):
+        self.text_box(4.5,1,1,arcade.color.PINK,str(self.source)) #print source node
+        self.text_box(4.5,11,1,arcade.color.PINK,str(self.target)) #print target node
+        self.text_box(1,15,2,arcade.color.PINK,self.timer)
+        self.text_box(1,13,3,arcade.color.PINK,"Refresh") 
+        self.text_box(17,13,4,arcade.color.PINK,"New Round") 
+        self.text_box(10,13,2,arcade.color.PINK,"Go!") 
+        self.text_box(17,15,4,arcade.color.PINK,"Topology") 
+        self.text_box(12,15,4,arcade.color.PINK,"Score: {}".format(self.score))
+        self.text_box(5,15,6,arcade.color.PINK,"High Score: {}".format(self.high_score))
+
+        for i, edge in enumerate(self.link_grid): #print links next to link grid
             self.text_box(12,i+3,2,arcade.color.PINK,"{}-{}".format(edge[0],edge[1]))
-        if self.ans_grid:
-            for i,edge in enumerate(self.ans_grid):
-                self.text_box(9,i+3,2,arcade.color.PINK,"{}-{}".format(edge[0],edge[1]))
 
+        for i,edge in enumerate(self.ans_grid): #print links next to answer grid
+            self.text_box(9,i+3,2,arcade.color.PINK,"{}-{}".format(edge[0],edge[1]))
+
+    
 
     def text_box(self,col,row,width,colour,text=None):
+        """
+        Prints a rectangle with given dimensions and colour and inserts given text 
+        """
         if width%2 == 0:
             arcade.draw_rectangle_filled((col + width/2)*(MARGIN+WIDTH) - (MARGIN+WIDTH)/2,row*(MARGIN+HEIGHT),width*(WIDTH+MARGIN)-MARGIN,HEIGHT,colour)
         else:
             arcade.draw_rectangle_filled((col + width//2)*(MARGIN+WIDTH),row*(MARGIN+HEIGHT),width*(WIDTH+MARGIN)-MARGIN,HEIGHT,colour)
-        if text:
+        if text: #print text
             arcade.draw_text(text,col*(MARGIN+WIDTH)-(WIDTH/4),row*(MARGIN+HEIGHT)-(WIDTH/4),arcade.color.BLACK,12)
 
     def on_mouse_press(self, x, y, button, key_modifiers):
         """
         Called when the user presses a mouse button.
         """
-        column = int((x +(WIDTH+MARGIN)/2)// (WIDTH + MARGIN))
-        row = int((y+(HEIGHT+MARGIN)/2) // (HEIGHT + MARGIN))
+        self.column = int((x +(WIDTH+MARGIN)/2)// (WIDTH + MARGIN)) #sets the column the mouse was pressed in
+        self.row = int((y+(HEIGHT+MARGIN)/2) // (HEIGHT + MARGIN)) #sets the row the mouse was pressed in
         
-        if column > 13 and column < 21 and row > 2 and row < 11:# links
-            edge = self.edges[row-3]
-            if self.count >= ROW_COUNT:
-                print("Answer grid full!")
-            else:
-                if row not in self.selected:
-                    self.ans_grid[edge] = self.grid[edge]
-                    self.selected.append(row)  
-                    self.count += 1
-                else:
-                    print("That link has already been selected")
-        elif column in [1,2,3] and row == 13: # refresh
+        if self.column > 13 and self.column < 21 and self.row > 2 and self.row < 11:# If one of the links in the link grid were clicked 
+            self.update_ans_grid()
+
+        elif self.column in [1,2,3] and self.row == 13: #refresh clicked
             self.refresh()
-        elif column in [17,18,19,20] and row == 13: # new round
-            print("New Round")
+
+        elif self.column in [17,18,19,20] and self.row == 13: #new round clicked
             self.new_round()
-        elif row == 2 and column < COLUMN_COUNT-self.slots+2:# move slots
-            self.first_slot = column - 1
-        elif column in [10,11] and row == 13:# GO
-            if self.is_solution(self.ans_grid,self.first_slot):
-                self.score += 1
-                #self.new_round()
-                print("Well Done!!!")
-                win_view = winView(self)
-                self.window.show_view(win_view)
-            else:
-                print("Try again")
-                #self.refresh()
-        elif column in [17,18,19,20] and row == 15:# topology
+
+        elif self.row == 2 and self.column < COLUMN_COUNT-self.slots+2 and self.column > 0: #spectrum grid clicked
+            self.first_slot = self.column - 1 #move slots position 
+            self.update_spec_grid()
+
+        elif self.column in [10,11] and self.row == 13: #GO clicked
+            self.check_solution()
+
+        elif self.column in [17,18,19,20] and self.row == 15: #topology clicked
             topology_view = topologyView(self)
-            self.window.show_view(topology_view)
+            self.window.show_view(topology_view) #show topology diagram 
 
         else:
             print("Out of bounds")
 
+    def count_down(self):
+        t = TIME - round(self.t)
+        mins,secs = divmod(t,60)
+        self.timer = "{:02d}:{:02d}".format(mins, secs)
+        if t < 0:
+            if self.score > self.high_score:
+                self.high_score = self.score
+            loose_view = looseView(self)
+            self.window.show_view(loose_view)
+
+    def update_ans_grid(self):
+        """
+        Updates answer grid with selected link 
+        """
+        edge = self.edges[self.row-3] #get the edge that row corresponds to
+
+        if self.ans_grid_count >= ROW_COUNT: #if answer grid if full
+            print("Answer grid full!")
+        else:
+            if self.row not in self.selected: #if link has not already been selected
+                self.ans_grid[edge] = self.link_grid[edge] #save edge to answer grid
+                self.selected.append(self.row)  
+                self.ans_grid_count += 1
+            else:
+                print("That link has already been selected")
+
+    def check_solution(self):
+        """
+        Checks for solution
+        """
+        if self.is_solution(self.ans_grid,self.first_slot): #check if solution is correct
+                self.score += 10
+                self.update_link_grid()
+                win_view = winView(self) 
+                self.window.show_view(win_view) #show win screen
+        else:
+            print("Try again")
+
+    def update_link_grid(self):
+        for edge in self.ans_grid.keys():
+            self.link_grid[edge] = np.add(self.link_grid[edge],self.spec_grid)
+
+
+    def update_spec_grid(self):
+        self.spec_grid = np.zeros(COLUMN_COUNT, dtype= int)
+        for i in range(self.slots):
+            self.spec_grid[self.first_slot+i] = 1
+
     def refresh(self):
+        """
+        Refreshes the answer grid
+        """
         print("Refresh")
         self.selected = []
         self.ans_grid = {}
-        self.count = 0
+        self.ans_grid_count = 0
     
-    def new_round(self):
-        has_solution = False
+    def new_game(self):
+        self.score = 0
         self.edges = [(1,2),(2,3),(1,4),(3,5),(2,5),(4,5),(3,6),(4,6)]
         self.G = nx.Graph()
         self.G.add_edges_from(self.edges)
-        #nx.draw_networkx(self.G)
-        #plt.show()
-        while not has_solution:
-            self.count = 0
-            self.selected = []
-            self.first_slot = 0
-            self.target = np.random.randint(2,7)
-            self.source = np.random.randint(1,self.target)
-            self.grid = {}
-            for edge in self.edges:
-                self.grid[edge] = np.random.randint(1,size = COLUMN_COUNT)
-            self.ans_grid = {}
-            self.specgrid = np.zeros(COLUMN_COUNT, dtype= int)
-            self.slots = np.random.randint(2,5)
-            for i in range(self.slots):
-                self.specgrid[i] = 1
-            all_paths = nx.all_simple_paths(self.G,self.source,self.target)
-            
-            for path in all_paths:
-                i = 0 
-                all_edges = []
-                while i < len(path)-1:
-                    if path[i] < path[i+1]:
-                        all_edges.append((path[i],path[i+1]))
-                    else:
-                        all_edges.append((path[i+1],path[i]))
-                    i+=1
-                temp_ans_grid = {}
-                for edge in all_edges:
-                    temp_ans_grid[edge]= self.grid[edge]
-                    
-                for i in range(COLUMN_COUNT-self.slots+2):
-                    if self.is_solution(temp_ans_grid,i):
-                        has_solution = True
-                        #print("Solution exists!")
+        self.link_grid = OrderedDict()
+        for edge in self.edges: #populate link grid
+            self.link_grid[edge] = np.zeros(COLUMN_COUNT, dtype= int)
+        self.new_round()                  
                         
-                        break 
-                if has_solution:
-                    break
-            
-    def set_score(self,score):
-        self.score = score
+    def new_round(self):
+        """
+        Sets up all parameters for a new round
+        """
+        self.org_time = time.time()
+        self.ans_grid_count = 0
+        self.selected = []
+        self.first_slot = 0
+        self.target = np.random.randint(2,7)
+        self.source = np.random.randint(1,self.target)
+        
+        self.ans_grid = OrderedDict()
+        self.slots = np.random.randint(2,5)
+        self.update_spec_grid()#populate spectrum grid
 
+        
+    def has_solution(self):
+        """
+        Checks if round parameters contain a solution
+        """
+        #find all possible paths between source and target
+        all_paths = nx.all_simple_paths(self.G,self.source,self.target) 
+        for path in all_paths: #for each possible path
+            i = 0 
+            all_edges = []
+            while i < len(path)-1: #prepare all edges in path
+                if path[i] < path[i+1]:
+                    all_edges.append((path[i],path[i+1]))
+                else:
+                    all_edges.append((path[i+1],path[i]))
+                i+=1
+
+            temp_ans_grid = {}
+            for edge in all_edges: #populate answer grid with edges 
+                temp_ans_grid[edge]= self.link_grid[edge]
+
+            #for each possible position of the spectrum slots
+            for i in range(COLUMN_COUNT-self.slots+1): 
+                if self.is_solution(temp_ans_grid,i): #check if solution is correct
+                    return True
+
+    def swapList(self,sl,pos1,pos2):
+        """
+        Swaps position of two elements in a list
+        """
+        temp = sl[pos1]
+        sl[pos1] = sl[pos2]
+        sl[pos2] = temp
+        return sl
 
     def is_solution(self,ans_grid,first_slot):
-        G = nx.Graph()
-        G.add_edges_from(ans_grid.keys())
-        try:
-            nx.has_path(G,self.source,self.target)
-            #print("Path Found!")
-            for row in ans_grid.values():
-                for i in range(self.slots):
-                    if row[first_slot + i] != 0:
-                        #print("Wrong solution")
-                        return False
-            return True
-        except:
-            #print("No path exists")
+        """
+        Checks if a path and slot combination is the correct solution for RSA
+        """
+        edges = []
+        for edge in ans_grid.keys(): #save all edges to a list
+            edges.append(edge[0])
+            edges.append(edge[1])
+
+        if not edges[0] == self.source: #if first node isn't source switch them
+            edges = self.swapList(edges,0,1)
+
+        for i in range(1,len(edges)-2,2): #for each edge
+            #if second node of the first edge doesn't match with the first node of the next edge
+            if not edges[i] == edges[i+1]:
+                edges = self.swapList(edges,i+1,i+2) # switch round the next edge
+
+        path = list(dict.fromkeys(edges)) #remove duplicates
+        #if first node isn't source or end node isn't target or path doesn't exist
+        if path[0] != self.source or path[-1] != self.target or nx.is_path(self.G,path) == False: 
             return False
+            
+        for row in ans_grid.values(): #for spectrum of each link
+            for i in range(self.slots): #for each slot
+                if row[first_slot + i] != 0: #if slot in spectrum is occupied 
+                    return False
+        return True
 
 class topologyView(arcade.View):
+    """
+    View class for viewing topology
+    """
 
     def __init__(self, game_view):
         super().__init__()
@@ -203,13 +278,15 @@ class topologyView(arcade.View):
         self.window.show_view(self.game_view)
 
 class winView(arcade.View):
-
+    """
+    View class for viewing Win screen
+    """
     def __init__(self, game_view):
         super().__init__()
         self.game_view = game_view
 
     def on_show(self):
-        self.background = arcade.load_texture("youwin.jpg")
+        self.background = arcade.load_texture("well done.jpg")
     
     def on_draw(self):
         arcade.start_render()
@@ -220,12 +297,31 @@ class winView(arcade.View):
         self.game_view.new_round()
         self.window.show_view(self.game_view)
 
+class looseView(arcade.View):
+    """
+    View class for viewing Win screen
+    """
+    def __init__(self, game_view):
+        super().__init__()
+        self.game_view = game_view
+
+    def on_show(self):
+        self.background = arcade.load_texture("gameover.jpg")
+    
+    def on_draw(self):
+        arcade.start_render()
+        # Draw the background texture
+        arcade.draw_lrwh_rectangle_textured(0, 0,SCREEN_WIDTH, SCREEN_HEIGHT,self.background)
+
+    def on_mouse_press(self, x: float, y: float, button: int, modifiers: int):
+        self.game_view.new_game()
+        self.window.show_view(self.game_view)
+
 def main():
 
-    window = arcade.Window(SCREEN_WIDTH, SCREEN_HEIGHT)
-    start_view=GameView()
+    window = arcade.Window(SCREEN_WIDTH, SCREEN_HEIGHT) #initiate window
+    start_view=GameView() #start with game view
     window.show_view(start_view)    
-    #start_view.setup()
     arcade.run()
 
 

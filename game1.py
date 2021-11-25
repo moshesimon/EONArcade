@@ -46,11 +46,11 @@ class GameView(arcade.View):
                 else:
                     self.text_box(column+1,i+3,1,arcade.color.BLACK)
 
-        for column in range(COLUMN_COUNT): #print slots
+        for column in range(COLUMN_COUNT): #print spectrum slots
             if self.spec_grid[column] == 0:
-                self.text_box(column+self.first_slot+1,2,1,arcade.color.BALL_BLUE)
+                self.text_box(column+1,2,1,arcade.color.BALL_BLUE)
             else:
-                self.text_box(column+self.first_slot+1,2,1,arcade.color.GREEN)
+                self.text_box(column+1,2,1,arcade.color.GREEN)
 
         self.text_box(4.5,1,1,arcade.color.PINK,str(self.source)) #print source node
         self.text_box(4.5,11,1,arcade.color.PINK,str(self.target)) #print target node
@@ -82,46 +82,63 @@ class GameView(arcade.View):
         """
         Called when the user presses a mouse button.
         """
-        column = int((x +(WIDTH+MARGIN)/2)// (WIDTH + MARGIN)) #sets the column the mouse was pressed in
-        row = int((y+(HEIGHT+MARGIN)/2) // (HEIGHT + MARGIN)) #sets the row the mouse was pressed in
+        self.column = int((x +(WIDTH+MARGIN)/2)// (WIDTH + MARGIN)) #sets the column the mouse was pressed in
+        self.row = int((y+(HEIGHT+MARGIN)/2) // (HEIGHT + MARGIN)) #sets the row the mouse was pressed in
         
-        if column > 13 and column < 21 and row > 2 and row < 11:# If one of the links in the link grid were clicked 
-            edge = self.edges[row-3] #get the edge that row corresponds to
+        if self.column > 13 and self.column < 21 and self.row > 2 and self.row < 11:# If one of the links in the link grid were clicked 
+            self.update_ans_grid()
 
-            if self.ans_grid_count >= ROW_COUNT: #if answer grid if full
-                print("Answer grid full!")
-            else:
-                if row not in self.selected: #if link has not already been selected
-                    self.ans_grid[edge] = self.link_grid[edge] #save edge to answer grid
-                    self.selected.append(row)  
-                    self.ans_grid_count += 1
-                else:
-                    print("That link has already been selected")
-
-        elif column in [1,2,3] and row == 13: #refresh clicked
+        elif self.column in [1,2,3] and self.row == 13: #refresh clicked
             self.refresh()
 
-        elif column in [17,18,19,20] and row == 13: #new round clicked
+        elif self.column in [17,18,19,20] and self.row == 13: #new round clicked
             self.new_round()
 
-        elif row == 2 and column < COLUMN_COUNT-self.slots+2: #spectrum grid clicked
-            self.first_slot = column - 1 #move slots position 
+        elif self.row == 2 and self.column < COLUMN_COUNT-self.slots+2 and self.column > 0: #spectrum grid clicked
+            self.first_slot = self.column - 1 #move slots position 
+            self.update_spec_grid()
 
-        elif column in [10,11] and row == 13: #GO clicked
-            if self.is_solution(self.ans_grid,self.first_slot): #check if solution is correct
-                self.score += 10
-                print("Well Done!!!")
-                win_view = winView(self) 
-                self.window.show_view(win_view) #show win screen
-            else:
-                print("Try again")
+        elif self.column in [10,11] and self.row == 13: #GO clicked
+            self.check_solution()
 
-        elif column in [17,18,19,20] and row == 15: #topology clicked
+        elif self.column in [17,18,19,20] and self.row == 15: #topology clicked
             topology_view = topologyView(self)
             self.window.show_view(topology_view) #show topology diagram 
 
         else:
             print("Out of bounds")
+
+    def update_spec_grid(self):
+        self.spec_grid = np.zeros(COLUMN_COUNT, dtype= int)
+        for i in range(self.slots):
+            self.spec_grid[self.first_slot+i] = 1
+
+    def update_ans_grid(self):
+        """
+        Updates answer grid with selected link 
+        """
+        edge = self.edges[self.row-3] #get the edge that row corresponds to
+
+        if self.ans_grid_count >= ROW_COUNT: #if answer grid if full
+            print("Answer grid full!")
+        else:
+            if self.row not in self.selected: #if link has not already been selected
+                self.ans_grid[edge] = self.link_grid[edge] #save edge to answer grid
+                self.selected.append(self.row)  
+                self.ans_grid_count += 1
+            else:
+                print("That link has already been selected")
+
+    def check_solution(self):
+        """
+        Checks for solution
+        """
+        if self.is_solution(self.ans_grid,self.first_slot): #check if solution is correct
+                self.score += 10
+                win_view = winView(self) 
+                self.window.show_view(win_view) #show win screen
+        else:
+            print("Try again")
 
     def refresh(self):
         """
@@ -154,13 +171,13 @@ class GameView(arcade.View):
         self.link_grid = OrderedDict()
         self.ans_grid = OrderedDict()
         self.slots = np.random.randint(2,5)
-        self.spec_grid = np.zeros(COLUMN_COUNT, dtype= int)
+
+        self.update_spec_grid()#populate spectrum grid
 
         for edge in self.edges: #populate link grid
             self.link_grid[edge] = np.random.randint(2,size = COLUMN_COUNT) 
 
-        for i in range(self.slots): #populate spectrum grid
-            self.spec_grid[i] = 1
+        
 
     def has_solution(self):
         """
@@ -221,7 +238,6 @@ class GameView(arcade.View):
         for row in ans_grid.values(): #for spectrum of each link
             for i in range(self.slots): #for each slot
                 if row[first_slot + i] != 0: #if slot in spectrum is occupied 
-                    print("Wrong solution")
                     return False
         return True
 
