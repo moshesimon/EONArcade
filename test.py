@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from PIL import Image
 
 G = nx.Graph()
-G.add_edges_from([(1,2),(2,3),(1,4),(3,5),(4,5),(1,5)])
+G.add_edges_from([(1,2),(2,3),(1,4),(3,5),(2,5),(4,5),(3,6),(4,6)])
 nx.draw_networkx(G)
 print(nx.has_path(G,1,5))
 #def path(s,d):
