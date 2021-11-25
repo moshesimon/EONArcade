@@ -11,3 +11,10 @@
  You are required to select a path from the source node to the target node, using the links located on the right of the screen.
  You must also pick the slots in the spectrum that are available and continuous along the whole path.
  Good luck!
+
+ don't forget to active the env!
+ Just run the command: 
+ 	
+    cmd.exe -> .\venv\Scripts\activate.bat
+
+    PowerShell -> .\venv\Scripts\Activate.ps1
