@@ -57,7 +57,7 @@ class GameView(arcade.View):
         self.text_box(4.5,11,1,arcade.color.PINK,str(self.target)) #print target node
         self.text_box(1,15,2,arcade.color.PINK,self.timer)
         self.text_box(1,13,3,arcade.color.PINK,"Refresh") 
-        self.text_box(17,13,4,arcade.color.PINK,"New Round") 
+        self.text_box(17,13,4,arcade.color.PINK,"New Game") 
         self.text_box(10,13,2,arcade.color.PINK,"Go!") 
         self.text_box(17,15,4,arcade.color.PINK,"Topology") 
         self.text_box(12,15,4,arcade.color.PINK,"Score: {}".format(self.score))
@@ -96,7 +96,7 @@ class GameView(arcade.View):
             self.refresh()
 
         elif self.column in [17,18,19,20] and self.row == 13: #new round clicked
-            self.new_round()
+            self.new_game()
 
         elif self.row == 2 and self.column < COLUMN_COUNT-self.slots+2 and self.column > 0: #spectrum grid clicked
             self.first_slot = self.column - 1 #move slots position 
@@ -183,6 +183,7 @@ class GameView(arcade.View):
         """
         Sets up all parameters for a new round
         """
+        
         self.org_time = time.time()
         self.ans_grid_count = 0
         self.selected = []
