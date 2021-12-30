@@ -85,7 +85,7 @@ class GameView(arcade.View):
         self.column = int((x +(WIDTH+MARGIN)/2)// (WIDTH + MARGIN)) #sets the column the mouse was pressed in
         self.row = int((y+(HEIGHT+MARGIN)/2) // (HEIGHT + MARGIN)) #sets the row the mouse was pressed in
         
-        if self.column > 13 and self.column < 21 and self.row > 2 and self.row < 11:# If one of the links in the link grid were clicked 
+        if self.column > 11 and self.column < 22 and self.row > 2 and self.row < 11:# If one of the links in the link grid were clicked 
             self.update_ans_grid()
 
         elif self.column in [1,2,3] and self.row == 13: #refresh clicked
